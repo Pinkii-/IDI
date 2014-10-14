@@ -134,25 +134,30 @@ void changeShowing(Showing s) {
     showing = s;
     switch (s) {
     case sPoint:
-        textShow = "Points";
+        textShow = "Points";glPolygonMode(GL_FRONT_AND_BACK,GL_POINT);
         break;
     case sLine:
-        textShow = "Lines";
+        textShow = "Lines";glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
         break;
     case sFill:
-        textShow = "Fill";
+        textShow = "Fill";glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
         break;
     default:
         break;
     }
+
     glutPostRedisplay();
 }
 
-void init() {
+void initCamara() {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(-1,1,-1,1,-1,1);
     glMatrixMode(GL_MODELVIEW);
+}
+
+void init() {
+    initCamara();
     m = Muneco(legoman);
     state = rotating;
     textState = "HELLO";
@@ -244,10 +249,6 @@ void drawGround(Vector3f centro, Vector3f plano, float size) {
 void refresh(void) {
     glClearColor(r,g,b,a);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-
-    if (showing == sPoint) glPolygonMode(GL_FRONT_AND_BACK,GL_POINT);
-    else if (showing == sLine) glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-    else if (showing == sFill) glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 glPushMatrix();
     glRotated(rotateY,1,0,0);
     glRotated(rotateX,0,1,0);
