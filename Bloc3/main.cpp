@@ -200,24 +200,39 @@ Esfera esferaContenidora() { //hardcodeado a ful
 void updateCameraType(CameraType t) {
     s = esferaContenidora();
     float r = s.radio;
+    dist = r*2.1;
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     if (t == ortho) {
         float wMin = std::min(rWidth,rHeight);
-        glOrtho(-r*(rWidth/wMin)/2+s.centro.x,r*(rWidth/wMin)/2+s.centro.x,
-                -r*(rHeight/wMin)/2+s.centro.y,r*(rHeight/wMin)/2+s.centro.y,
-                -r+s.centro.z+dist,r+s.centro.z+dist);
+        glOrtho(-r*(rWidth/wMin),r*(rWidth/wMin),
+                -r*(rHeight/wMin),r*(rHeight/wMin),
+                -r+dist,r+dist);
     }
     else {
         float fov = asin(r/dist);
-        gluPerspective(fov,rWidth/rHeight,-r+s.centro.z+dist,r+s.centro.z+dist);
+        if (float(rWidth)/rHeight < 1) fov = atan(tan(fov)/(float(rWidth)/rHeight));
+        gluPerspective(2*fov*180/M_PI,float(rWidth)/rHeight,dist-r,dist+r);
     }
     glMatrixMode(GL_MODELVIEW);
+    glutPostRedisplay();
 }
 
-void setCameraPos() {
+void updateCameraPos() {
+    glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    glTranslated(0.,0.,-dist);
+    glRotated(rotateZ,0,0,1);
+    glRotated(rotateY,1,0,0);
+    glRotated(rotateX,0,1,0);
+    glTranslated(-s.centro.x,-s.centro.y,-s.centro.z);
+    glutPostRedisplay();
 //    gluLookAt();
+}
+
+void updateCamera() {
+    updateCameraType(cameraState);
+    updateCameraPos();
 }
 
 void init() {
@@ -231,11 +246,12 @@ void init() {
     monigote = 0.39;
     rotateX = rotateY = 45;
     rotateZ = 0;
-    dist = 0.2;
+
 
     cameraState = ortho;
     updateCameraType(cameraState);
-    setCameraPos();
+    updateCameraPos();
+    dist = s.radio*4;
 }
 
 void myBodyIsReady(float size) {
@@ -313,19 +329,12 @@ void drawGround(Vector3f centro, Vector3f plano, float size) {
 void refresh(void) {
     glClearColor(r,g,b,a);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
 glPushMatrix();
-
-
-    glTranslated(0.,0.,-dist);
-    glRotated(rotateZ,0,0,1);
-    glRotated(rotateY,1,0,0);
-    glRotated(rotateX,0,1,0);
-    glTranslated(-s.centro.x,-s.centro.y,-s.centro.z);
-
-    glColor3f(0,0,0);
-    glutWireSphere(s.radio,20,20);
-//    glTranslated(-s.centro.x,-s.centro.y,-s.centro.z);
+    glPushMatrix();
+        glColor3f(0,0,0);
+        glTranslated(s.centro.x,s.centro.y,s.centro.z);
+        glutWireSphere(s.radio,20,20);
+    glPopMatrix();
     glPushMatrix();
         glColor3f(1,1,0);
         drawGround(Vector3f(0,-0.4,0), Vector3f(1,0,1), 1.4);
@@ -378,7 +387,7 @@ void mouseMoved(int x, int y) {
 
         posMouse.first = x;
         posMouse.second = y;
-        glutPostRedisplay();
+        updateCameraPos();
     }
     else if (mouse.first and state == moving) {
         m.posFinal.x += float(x-posMouse.first)/rWidth;
@@ -388,7 +397,7 @@ void mouseMoved(int x, int y) {
         posMouse.first = x;
         posMouse.second = y;
         updateCameraType(cameraState);
-        glutPostRedisplay();
+        updateCameraPos();
     }
 }
 
@@ -412,19 +421,13 @@ void teclado(unsigned char c, int x, int y) {
         break;
     case 'c':
         cameraState = (cameraState+1)%qttCameraType;
+        updateCameraType(cameraState);
+        break;
     case 's':
         changeShowing((showing+1)%qttShowing);
         break;
     case 'a':
         m.changeModel((m.name+1)%qttModels);
-        glutPostRedisplay();
-        break;
-    case 'z':
-        dist += 0.01;
-        glutPostRedisplay();
-        break;
-    case 'x':
-        dist -= 0.01;
         glutPostRedisplay();
         break;
     default:

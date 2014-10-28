@@ -5,7 +5,7 @@ CONFIG -= qt
 
 QMAKE_CXXFLAGS += -fpermissive -Wwrite-strings
 
-LIBS += -lglut -lGL -pthread
+LIBS += -lglut -lGL -lGLU -pthread
 
 SOURCES += main.cpp \
     model/model.cpp
