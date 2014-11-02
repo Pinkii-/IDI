@@ -7,12 +7,15 @@
 #include <GL/freeglut.h>
 #include "model/model.h"
 #include <math.h>
+#include <stdio.h>
 
 #define help std::cout << "|------------------------------------|" << std::endl << "|Aiudame, io tengo muchos quereseres.|" << std::endl << "|Aiudame! porque mi casa esta súsia. |"<< std::endl << "|------------------------------------|" << std::endl << std::endl;
 
 #define HOMER "model/homer.obj"
 #define LEGOMAN "model/legoman.obj"
 #define PHOMER "model/HomerProves.obj"
+#define PATRICIO "model/Patricio.obj"
+#define KPATRICIO "model/patricioKiller.obj"
 
 
 enum State {
@@ -24,12 +27,27 @@ enum Showing {
 };
 
 enum Models {
-    homer, legoman, phomer, qttModels
+    homer, legoman, phomer, patricio, kpatricio, qttModels
 };
 
 enum CameraType {
     ortho, perspective, qttCameraType
 };
+
+std::vector<Model> modelos;
+std::vector<bool> loadedModels;
+
+Model *loadModel(Models m) {
+    if (not loadedModels[m]) {
+        if (m == homer) modelos[m].load(HOMER);
+        else if (m == legoman) modelos[m].load(LEGOMAN);
+        else if (m == phomer)modelos[m].load(PHOMER);
+        else if (m == patricio) modelos[m].load(PATRICIO);
+        else if (m == kpatricio) modelos[m].load(KPATRICIO);
+        loadedModels[m] = true;
+    }
+    return &modelos[m];
+}
 
 struct Vector3f {
     float x, y, z;
@@ -41,6 +59,10 @@ struct Vector3f {
     }
 };
 
+Vector3f operator + (Vector3f a , Vector3f b){Vector3f aux;aux.x = a.x + b.x;aux.y = a.y + b.y;aux.z = a.z + b.z;return aux;}
+Vector3f operator - (Vector3f a , Vector3f b){Vector3f aux;aux.x = a.x - b.x;aux.y = a.y - b.y;aux.z = a.z - b.z;return aux;}
+Vector3f operator * (Vector3f a , float b){Vector3f aux;aux.x = a.x * b;aux.y = a.y * b;aux.z = a.z * b;return aux;}
+
 struct Caja {
     float minX, maxX, minY, maxY, minZ, maxZ;
     Caja() {}
@@ -49,7 +71,7 @@ struct Caja {
         minY = y2; maxY = y;
         minZ = z2; maxZ = z;
     }
-    Caja createBox(Model m) {
+    void createBox(Model m) {
         minX = minY = minZ =999999999;
         maxX = maxY = maxZ = -99999999;
         int fSize = m.faces().size();
@@ -87,30 +109,47 @@ struct Esfera {
     float radio;
 };
 
+struct Bala {
+    Vector3f pos;
+    float dir;
+    float speed;
+    Bala() {}
+    ~Bala() {}
+    Bala(Vector3f posIni,float dir) {
+        this->dir = dir;
+        pos = posIni;
+        this->speed = 5;
+    }
+    void update(float deltaTime) {
+        pos = pos + Vector3f(sin(this->dir*M_PI/180),0,cos(this->dir*M_PI/180))*this->speed*deltaTime;
+//        pos = pos + Vector3f(1,0,0)*this->speed*deltaTime;
+    }
+    void draw() {
+        glutSolidCone(0.08,0.5,10,10);
+    }
+};
+
 struct Muneco {
     Models name;
     Caja box;
-    Model modelo;
+    Model *modelo;
     Vector3f centro;
     Vector3f tamano;
     Vector3f posFinal;
     float scalated;
     Muneco () {}
-    Muneco (Models name,float s) {
+    Muneco (Models name,float s,Vector3f pos) {
         std::cout << "Creando nuevo modelo" << std::endl << "Su escalado es " << s << std::endl;
         scalated = s;
         changeModel(name);
-        posFinal = Vector3f(-0.75+tamano.x/2.f,-0.39+tamano.y/2.f,0.75-tamano.z/2.f);
-        std::cout << "Pos Final: " << posFinal.x << " " << posFinal.y << " " << posFinal.z << std::endl;
+        posFinal = Vector3f(pos.x,pos.y+tamano.y/2,pos.z);
     }
     void changeModel(Models name) {
         std::cout << "Cambiando el modelo";
         this->name = name;
-        if (name == homer) modelo.load(HOMER);
-        else if (name == legoman)modelo.load(LEGOMAN);
-        else modelo.load(PHOMER);
+        modelo = loadModel(name);
         std::cout << "    Modelo cargado" << std::endl;
-        box.createBox(modelo);
+        box.createBox(*modelo);
         centro = box.findCenter();
         size();
     }
@@ -125,6 +164,7 @@ struct Muneco {
     }
 };
 
+
 int rWidth = 600;
 int rHeight = 600;
 int portrait = std::min(rWidth,rHeight);
@@ -137,10 +177,13 @@ CameraType cameraState;
 char* textState;
 char* textShow;
 int rotateX,rotateY,rotateZ;
-float dist;
+float dist; float zoom;
 float monigote;
-Muneco m;
+Muneco patricio1,patricio2;
+float speed,direccionPatricio;
 Esfera s;
+bool sferaVisible,wallVisible,fps;
+std::vector<Bala> balas;
 
 
 void changeState(State s) {
@@ -180,19 +223,22 @@ void changeShowing(Showing s) {
     glutPostRedisplay();
 }
 
+float distPtP(Vector3f a ,Vector3f b) {
+    return pow(pow(a.x-b.x,2)+pow(a.y-b.y,2)+pow(a.z-b.z,2),1.0/2.0);
+}
+
 Esfera esferaContenidora() { //hardcodeado a ful
     Caja aux;
-    aux.maxX = std::max(m.posFinal.x+m.tamano.x/2,0.7f);
-    aux.minX = std::min(m.posFinal.x-m.tamano.x/2,-0.7f);
-    aux.maxY = std::max(m.posFinal.y+m.tamano.y/2,-0.4f);
-    aux.minY = std::min(m.posFinal.y-m.tamano.y/2,-0.4f);
-    aux.maxZ = std::max(m.posFinal.z+m.tamano.z/2,0.7f);
-    aux.minZ = std::min(m.posFinal.z-m.tamano.z/2,-0.7f);
-
+    aux.maxX = std::max(patricio1.posFinal.x+patricio1.tamano.x/2,5.f);
+    aux.minX = std::min(patricio1.posFinal.x-patricio1.tamano.x/2,-5.f);
+    aux.maxY = std::max(patricio1.posFinal.y+patricio1.tamano.y/2,0.f);
+    aux.minY = std::min(patricio1.posFinal.y-patricio1.tamano.y/2,0.f);
+    aux.maxZ = std::max(patricio1.posFinal.z+patricio1.tamano.z/2,5.f);
+    aux.minZ = std::min(patricio1.posFinal.z-patricio1.tamano.z/2,-5.f);
 
     Vector3f centro = aux.findCenter();
     Esfera ret;
-    ret.radio = pow(pow(aux.maxX-centro.x,2)+pow(aux.maxY-centro.y,2)+pow(aux.maxZ-centro.z,2),1.0/2.0);
+    ret.radio = distPtP(Vector3f(aux.maxX,aux.maxY,aux.maxZ),centro);
     ret.centro = centro;
     return ret;
 }
@@ -200,34 +246,49 @@ Esfera esferaContenidora() { //hardcodeado a ful
 void updateCameraType(CameraType t) {
     s = esferaContenidora();
     float r = s.radio;
-    dist = r*2.1;
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    if (t == ortho) {
-        float wMin = std::min(rWidth,rHeight);
-        glOrtho(-r*(rWidth/wMin),r*(rWidth/wMin),
-                -r*(rHeight/wMin),r*(rHeight/wMin),
-                -r+dist,r+dist);
+    if (fps) {
+        float fov = 60;
+        if (float(rWidth)/rHeight < 1) fov = atan(tan(fov)/(float(rWidth)/rHeight));
+        gluPerspective(2*fov*180/M_PI,float(rWidth)/rHeight,patricio1.tamano.z/2,r*2);
     }
     else {
-        float fov = asin(r/dist);
-        if (float(rWidth)/rHeight < 1) fov = atan(tan(fov)/(float(rWidth)/rHeight));
-        gluPerspective(2*fov*180/M_PI,float(rWidth)/rHeight,dist-r,dist+r);
+        dist = r*2.5;
+        if (t == ortho) {
+            float wMin = std::min(rWidth,rHeight) * zoom;
+            glOrtho(-r*(rWidth/wMin),r*(rWidth/wMin),
+                    -r*(rHeight/wMin),r*(rHeight/wMin),
+                    -r+dist,r+dist);
+        }
+        else {
+            float fov = asin(r/dist)/zoom;
+            if (float(rWidth)/rHeight < 1) fov = atan(tan(fov)/(float(rWidth)/rHeight));
+            if (2*fov*180/M_PI > 180) fov = M_PI/(2*180)*180; // 2*fov*180/M_PI = 180
+            gluPerspective(2*fov*180/M_PI,float(rWidth)/rHeight,dist-r,dist+r);
+        }
     }
     glMatrixMode(GL_MODELVIEW);
-    glutPostRedisplay();
+//    glutPostRedisplay();
 }
 
 void updateCameraPos() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glTranslated(0.,0.,-dist);
-    glRotated(rotateZ,0,0,1);
-    glRotated(rotateY,1,0,0);
-    glRotated(rotateX,0,1,0);
-    glTranslated(-s.centro.x,-s.centro.y,-s.centro.z);
+    if (fps) { //Omg! where you at?!11'!?! the killer is killing
+        gluLookAt(patricio1.posFinal.x,patricio1.posFinal.y,patricio1.posFinal.z,
+                  patricio1.posFinal.x-sin(direccionPatricio*M_PI/180),patricio1.posFinal.y,patricio1.posFinal.z-cos(direccionPatricio*M_PI/180),
+                  0,1,0);
+
+    }
+    else {
+        glTranslated(0.,0.,-dist);
+        glRotated(rotateZ,0,0,1);
+        glRotated(rotateY,1,0,0);
+        glRotated(rotateX,0,1,0);
+        glTranslated(-s.centro.x,-s.centro.y,-s.centro.z);
+    }
     glutPostRedisplay();
-//    gluLookAt();
 }
 
 void updateCamera() {
@@ -235,38 +296,49 @@ void updateCamera() {
     updateCameraPos();
 }
 
+void reset() {
+    dist = s.radio*4;
+    rotateX = rotateY = 45;
+    rotateZ = 0;
+    cameraState = perspective;
+    zoom = 1;
+    updateCamera();
+}
+
 void init() {
-    m = Muneco(legoman,0.5);
+    modelos = std::vector<Model>(qttModels);
+    loadedModels = std::vector<bool>(qttModels,false);
+    balas = std::vector<Bala>(0);
+    patricio1 = Muneco(kpatricio,1,Vector3f(0,0,0));
+    patricio2 = Muneco(patricio,1.5,Vector3f(2.5,0,2.5));
+    speed = 0.1;
+    direccionPatricio = -90;
     state = rotating;
     textState = "HELLO";
     showing = sFill;
     textShow = "Fill";
     r = g = 1;
     b = a = 0.8;
-    monigote = 0.39;
-    rotateX = rotateY = 45;
-    rotateZ = 0;
-
-
-    cameraState = ortho;
-    updateCameraType(cameraState);
-    updateCameraPos();
-    dist = s.radio*4;
+    monigote = 0.5;
+    sferaVisible = false;
+    wallVisible = true;
+    fps = true;
+    reset();
 }
 
 void myBodyIsReady(float size) {
     glPushMatrix(); {// Body
-        glColor3f(0,1,0);
+        glColor3f(0,0.7,0);
         //    glTranslated(0.f,0.10f,0.f);
         glutSolidSphere(size,20.f,20.f);
     } glPopMatrix();
     glPushMatrix(); {// Head
-        glColor3f(0,0,1);
+        glColor3f(0,0,0.7);
         glTranslated(0.f,size*1.5,0.f);
         glutSolidSphere(size/2,20.f,20.f);
     } glPopMatrix();
     glPushMatrix(); { // The D
-        glColor3f(1,0,0);
+        glColor3f(0.7,0,0);
         glTranslated(size/4,size*1.5,0.f);
         glRotated(90,0,1,0);
         glutSolidCone(size/4,size/2,20.f,20.f);
@@ -287,13 +359,13 @@ void daModelIsReal(Muneco m) {
 
     glBegin(GL_TRIANGLES);
 
-    for (int i = 0; i < m.modelo.faces().size(); ++i) {
+    for (int i = 0; i < m.modelo->faces().size(); ++i) {
 
-        const Face &f = m.modelo.faces()[i];
+        const Face &f = m.modelo->faces()[i];
         glColor4fv(Materials[f.mat].diffuse);
         const Vertex *v;
         for (int j = 0; j < 3; ++j) {
-            v = &m.modelo.vertices()[f.v[j]];
+            v = &m.modelo->vertices()[f.v[j]];
             glVertex3dv(v);
         }
     }
@@ -326,40 +398,89 @@ void drawGround(Vector3f centro, Vector3f plano, float size) {
     glEnd();
 }
 
-void refresh(void) {
-    glClearColor(r,g,b,a);
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-glPushMatrix();
+void writeOnWindow() {
     glPushMatrix();
-        glColor3f(0,0,0);
-        glTranslated(s.centro.x,s.centro.y,s.centro.z);
-        glutWireSphere(s.radio,20,20);
-    glPopMatrix();
-    glPushMatrix();
-        glColor3f(1,1,0);
-        drawGround(Vector3f(0,-0.4,0), Vector3f(1,0,1), 1.4);
-    glPopMatrix();
-    glPushMatrix();
-        ejes();
-    glPopMatrix();
-    glPushMatrix();
-        glTranslated(0,monigote-0.4,0);
-        myBodyIsReady(monigote);
-    glPopMatrix();
-    glPushMatrix();
-        glTranslated(m.posFinal.x,m.posFinal.y,m.posFinal.z);
-        daModelIsReal(m);
-    glPopMatrix();
-    glPopMatrix();
-    glPushMatrix();
+        glLoadIdentity(); // Me fornico la modelview
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+            glLoadIdentity(); // Me fornico la projection
+            glOrtho(-1,1,-1,1,-1,1);
+        glMatrixMode(GL_MODELVIEW);
+
+        //Pinto
         glColor3f(0,0,0);
         glRasterPos2f(-0.9,0.9);
         glutBitmapString(GLUT_BITMAP_HELVETICA_18, textState);
-    glPopMatrix();
-    glPushMatrix();
+
         glColor3f(0,0,0);
         glRasterPos2f(0.7,0.9);
         glutBitmapString(GLUT_BITMAP_HELVETICA_18, textShow);
+
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix(); // Deshago fornicacion de la projection
+        glMatrixMode(GL_MODELVIEW);
+    glPopMatrix(); // Deshago la fornicacion de la modelview
+}
+
+void drawMonigotes(){
+    glPushMatrix(); // monigote 1
+        glTranslated(2.5,monigote,-2.5);
+        myBodyIsReady(monigote);
+    glPopMatrix();
+    glPushMatrix(); // monigote 2
+        glTranslated(-2.5,monigote,2.5);
+        myBodyIsReady(monigote);
+    glPopMatrix();
+    glPushMatrix(); // monigote 3
+        glTranslated(-2.5,monigote,-2.5);
+        myBodyIsReady(monigote);
+    glPopMatrix();
+}
+
+void drawWall(Vector3f centro,Vector3f size) {
+    glPushMatrix();
+    glTranslated(centro.x,centro.y+size.y/2,centro.z);
+    glScaled(size.x,size.y,size.z);
+    glutSolidCube(1);
+    glPopMatrix();
+}
+
+void refresh(void) {
+    glClearColor(r,g,b,a);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    if (sferaVisible) {
+    glPushMatrix();
+        glColor3f(0,0,0);
+        glTranslated(s.centro.x,s.centro.y,s.centro.z);
+        glutWireSphere(s.radio,30,30);
+    glPopMatrix(); }
+    glPushMatrix();
+        glColor3f(0.1,0.9,0.9);
+        drawGround(Vector3f(0,0,0), Vector3f(1,0,1), 10);
+    glPopMatrix();
+    ejes();
+    if (wallVisible) {drawWall(Vector3f(0,0,-4.9),Vector3f(10,1.5,0.2));
+                      drawWall(Vector3f(1.5,0,2.5),Vector3f(0.2,1.5,4));}
+    drawMonigotes();
+    glPushMatrix(); //patricio serialKiller
+        glTranslated(patricio1.posFinal.x,patricio1.posFinal.y,patricio1.posFinal.z);
+        glRotated(direccionPatricio,0,1,0);
+        daModelIsReal(patricio1);
+    glPopMatrix();
+    glPushMatrix(); //patricio 2
+        glTranslated(patricio2.posFinal.x,patricio2.posFinal.y,patricio2.posFinal.z);
+        daModelIsReal(patricio2);
+    glPopMatrix();
+    for (uint i = 0; i < balas.size();++i) {
+        glPushMatrix();
+        glTranslated(balas[i].pos.x,balas[i].pos.y,balas[i].pos.z);
+        glRotated(balas[i].dir,0,1,0);
+        glTranslated(0.25,0.2,0.32);
+        balas[i].draw();
+        glPopMatrix();
+    }
+    glPushMatrix();
+        writeOnWindow();
     glPopMatrix();
     glutPostRedisplay();
     glutSwapBuffers();
@@ -373,31 +494,34 @@ void resize(int x, int y) {
 }
 
 void mouseClicked(int button, int pressed, int x, int y) {
-    if (button == 0 and pressed == 0) { mouse.first = true; posMouse.first = x; posMouse.second = y; }
+    if (pressed == 0) {posMouse.first = x; posMouse.second = y;}
+    if (button == 0 and pressed == 0) mouse.first = true;
     else if (button == 0 and pressed == 1) mouse.first = false;
+    else if (button == 2 and pressed == 0) mouse.second = true;
+    else if (button == 2 and pressed == 1) mouse.second = false;
 }
 
 void mouseMoved(int x, int y) {
     if (mouse.first and state == rotating) {
-        if (posMouse.first > x) { rotateX += abs(posMouse.first - x);}
-        else if (posMouse.first < x) { rotateX -= abs(posMouse.first - x); }
-
-        if (posMouse.second > y) { rotateY += abs(posMouse.second - y);}
-        else if (posMouse.second < y) { rotateY -= abs(posMouse.second - y); }
-
+        rotateX += posMouse.first - x;
+        rotateY += posMouse.second - y;
         posMouse.first = x;
         posMouse.second = y;
         updateCameraPos();
     }
     else if (mouse.first and state == moving) {
-        m.posFinal.x += float(x-posMouse.first)/rWidth;
-        m.posFinal.z += float(y-posMouse.second)/rHeight;
-
-
+        patricio1.posFinal.x += float(x-posMouse.first)/rWidth;
+        patricio1.posFinal.z += float(y-posMouse.second)/rHeight;
         posMouse.first = x;
         posMouse.second = y;
         updateCameraType(cameraState);
         updateCameraPos();
+    }
+    else if (mouse.second) {
+        zoom += float(y-posMouse.second)/rHeight;
+        if (zoom < 0.01) zoom = 0.01;
+        posMouse.second = y;
+        updateCameraType(cameraState);
     }
 }
 
@@ -415,23 +539,84 @@ void teclado(unsigned char c, int x, int y) {
         std::cout << "Press T and click three time to declare a new moving" << std::endl;
         std::cout << std::endl;
         break;
+    case 'w':
+        patricio1.posFinal = patricio1.posFinal + Vector3f(sin(direccionPatricio*M_PI/180)*speed,0,cos(direccionPatricio*M_PI/180)*speed);
+        updateCamera(); // Por si el patricio se ha salido de la esfera i ase iorar al ninio jisus
+        glutPostRedisplay();
+        break;
+    case 's':
+        patricio1.posFinal = patricio1.posFinal - Vector3f(sin(direccionPatricio*M_PI/180)*speed,0,cos(direccionPatricio*M_PI/180)*speed);
+        updateCamera(); // Por si el patricio se ha salido de la esfera i ase iorar al ninio jisus
+        glutPostRedisplay();
+        break;
+    case 'a':
+        direccionPatricio += 2.5;
+        if (fps) updateCamera();
+        else glutPostRedisplay();
+        break;
+    case 'd':
+        direccionPatricio -= 2.5;
+        if (fps) updateCamera();
+        else glutPostRedisplay();
+    case 'z':
+        speed += 0.03;
+        break;
+    case 'x':
+        speed -= 0.03; if (speed < 0) speed = 0;
+        break;
+    case 'r':
+        reset();
+        glutPostRedisplay();
+        break;
+    case 'c':
+        fps = not fps;
+        updateCamera();
+        break;
     case 'f':
         if (state == rotating) changeState(moving);
         else if (state == moving) changeState(rotating);
         break;
-    case 'c':
+    case 'p':
         cameraState = (cameraState+1)%qttCameraType;
         updateCameraType(cameraState);
         break;
-    case 's':
+    case 'o':
         changeShowing((showing+1)%qttShowing);
         break;
-    case 'a':
-        m.changeModel((m.name+1)%qttModels);
+    case 'm':
+        patricio1.changeModel((patricio1.name+1)%qttModels);
         glutPostRedisplay();
         break;
+    case 'v':
+        wallVisible = not wallVisible;
+        glutPostRedisplay();
+        break;
+    case 'b':
+        sferaVisible = not sferaVisible;
+        glutPostRedisplay();
+        break;
+    case ' ':
+        balas.push_back(Bala(patricio1.posFinal,direccionPatricio));
     default:
         break;
+    }
+}
+
+float ttt,timebase=0;
+
+
+
+void update() {
+    ttt = glutGet(GLUT_ELAPSED_TIME);
+    float deltaTime;
+    std::cout << "FPS:" << 1000/(ttt-timebase) <<  std::endl;
+    deltaTime = (ttt-timebase)/1000;
+//    sprintf(textShow,"%4.2f",1/deltaTime);
+    timebase = ttt;
+
+    for (uint i = 0; i < balas.size(); ++i)  {
+        balas[i].update(deltaTime);
+        if (distPtP(balas[i].pos,patricio1.posFinal) > s.radio*2) balas.erase(balas.begin()+i);
     }
 }
 
@@ -449,6 +634,7 @@ int main(int argc, char **argv) {
     glutMouseFunc(mouseClicked);
     glutMotionFunc(mouseMoved);
     glutKeyboardFunc(teclado);
+    glutIdleFunc(update);
     glutMainLoop();
     return 0;
 }
