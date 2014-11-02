@@ -18,10 +18,6 @@
 #define KPATRICIO "model/patricioKiller.obj"
 
 
-enum State {
-    rotating, moving, none, qttState
-};
-
 enum Showing {
     sPoint, sLine, sFill, qttShowing
 };
@@ -31,7 +27,7 @@ enum Models {
 };
 
 enum CameraType {
-    ortho, perspective, qttCameraType
+    Ortho, Perspective, Fps ,qttCameraType
 };
 
 std::vector<Model> modelos;
@@ -112,16 +108,16 @@ struct Esfera {
 struct Bala {
     Vector3f pos;
     float dir;
-    float speed;
+    float s;
     Bala() {}
     ~Bala() {}
     Bala(Vector3f posIni,float dir) {
         this->dir = dir;
         pos = posIni;
-        this->speed = 5;
+        s = 5;
     }
     void update(float deltaTime) {
-        pos = pos + Vector3f(sin(this->dir*M_PI/180),0,cos(this->dir*M_PI/180))*this->speed*deltaTime;
+        pos = pos + Vector3f(sin(this->dir*M_PI/180),0,cos(this->dir*M_PI/180))*s*deltaTime;
 //        pos = pos + Vector3f(1,0,0)*this->speed*deltaTime;
     }
     void draw() {
@@ -171,10 +167,9 @@ int portrait = std::min(rWidth,rHeight);
 std::pair<int,int> posMouse;
 std::pair<bool,bool> mouse;
 float r, g, b, a;
-State state;
 Showing showing;
 CameraType cameraState;
-char* textState;
+char* textCamera;
 char* textShow;
 int rotateX,rotateY,rotateZ;
 float dist; float zoom;
@@ -182,27 +177,10 @@ float monigote;
 Muneco patricio1,patricio2;
 float speed,direccionPatricio;
 Esfera s;
-bool sferaVisible,wallVisible,fps;
+bool sferaVisible,wallVisible,fps,ortho;
 std::vector<Bala> balas;
 
 
-void changeState(State s) {
-    state = s;
-    switch (s) {
-    case rotating:
-       textState = "Girando";
-        break;
-    case moving:
-        textState = "Moviendose";
-        break;
-    case none:
-        textState = "Pausado";
-        break;
-    default:
-        break;
-    }
-    glutPostRedisplay();
-}
 
 void changeShowing(Showing s) {   
     showing = s;
@@ -243,19 +221,19 @@ Esfera esferaContenidora() { //hardcodeado a ful
     return ret;
 }
 
-void updateCameraType(CameraType t) {
+void updateCameraType() {
     s = esferaContenidora();
     float r = s.radio;
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    if (fps) {
+    if (cameraState == Fps) {
         float fov = 60;
         if (float(rWidth)/rHeight < 1) fov = atan(tan(fov)/(float(rWidth)/rHeight));
         gluPerspective(2*fov*180/M_PI,float(rWidth)/rHeight,patricio1.tamano.z/2,r*2);
     }
     else {
         dist = r*2.5;
-        if (t == ortho) {
+        if (cameraState == Ortho) {
             float wMin = std::min(rWidth,rHeight) * zoom;
             glOrtho(-r*(rWidth/wMin),r*(rWidth/wMin),
                     -r*(rHeight/wMin),r*(rHeight/wMin),
@@ -276,8 +254,10 @@ void updateCameraPos() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     if (fps) { //Omg! where you at?!11'!?! the killer is killing
-        gluLookAt(patricio1.posFinal.x,patricio1.posFinal.y,patricio1.posFinal.z,
-                  patricio1.posFinal.x-sin(direccionPatricio*M_PI/180),patricio1.posFinal.y,patricio1.posFinal.z-cos(direccionPatricio*M_PI/180),
+        Vector3f director(sin(direccionPatricio*M_PI/180),0,cos(direccionPatricio*M_PI/180));
+        Vector3f p(patricio1.posFinal.x,patricio1.posFinal.y+patricio1.tamano.y/4,patricio1.posFinal.z);
+        gluLookAt(p.x+patricio1.tamano.x/3*director.x,p.y,p.z+patricio1.tamano.z/3*director.z,
+                  p.x+director.x,p.y,p.z+director.z,
                   0,1,0);
 
     }
@@ -292,17 +272,38 @@ void updateCameraPos() {
 }
 
 void updateCamera() {
-    updateCameraType(cameraState);
+    updateCameraType();
     updateCameraPos();
+}
+
+void changeCamera(CameraType s) {
+    cameraState = s;
+    if (s == Ortho) { ortho = true; fps = false;}
+    else if (s == Perspective) {ortho = false; fps = false;}
+    else fps = true;
+    switch (s) {
+    case Ortho:
+       textCamera = "Camara Ortho";
+        break;
+    case Perspective:
+        textCamera = "Camara Perstevtiva";
+        break;
+    case Fps:
+        textCamera = "First person shooter";
+        break;
+    default:
+        break;
+    }
+    updateCamera();
+    glutPostRedisplay();
 }
 
 void reset() {
     dist = s.radio*4;
     rotateX = rotateY = 45;
     rotateZ = 0;
-    cameraState = perspective;
     zoom = 1;
-    updateCamera();
+    changeCamera(Perspective);
 }
 
 void init() {
@@ -313,8 +314,7 @@ void init() {
     patricio2 = Muneco(patricio,1.5,Vector3f(2.5,0,2.5));
     speed = 0.1;
     direccionPatricio = -90;
-    state = rotating;
-    textState = "HELLO";
+//    textCamera = "fps";
     showing = sFill;
     textShow = "Fill";
     r = g = 1;
@@ -322,8 +322,9 @@ void init() {
     monigote = 0.5;
     sferaVisible = false;
     wallVisible = true;
-    fps = true;
     reset();
+    changeCamera(Fps);
+    updateCamera();
 }
 
 void myBodyIsReady(float size) {
@@ -410,7 +411,7 @@ void writeOnWindow() {
         //Pinto
         glColor3f(0,0,0);
         glRasterPos2f(-0.9,0.9);
-        glutBitmapString(GLUT_BITMAP_HELVETICA_18, textState);
+        glutBitmapString(GLUT_BITMAP_HELVETICA_18, textCamera);
 
         glColor3f(0,0,0);
         glRasterPos2f(0.7,0.9);
@@ -490,7 +491,7 @@ void resize(int x, int y) {
     rWidth = x;
     rHeight = y;
     glViewport(0,0,x,y);
-    updateCameraType(cameraState);
+    updateCameraType();
 }
 
 void mouseClicked(int button, int pressed, int x, int y) {
@@ -502,26 +503,20 @@ void mouseClicked(int button, int pressed, int x, int y) {
 }
 
 void mouseMoved(int x, int y) {
-    if (mouse.first and state == rotating) {
-        rotateX += posMouse.first - x;
-        rotateY += posMouse.second - y;
-        posMouse.first = x;
-        posMouse.second = y;
-        updateCameraPos();
-    }
-    else if (mouse.first and state == moving) {
-        patricio1.posFinal.x += float(x-posMouse.first)/rWidth;
-        patricio1.posFinal.z += float(y-posMouse.second)/rHeight;
-        posMouse.first = x;
-        posMouse.second = y;
-        updateCameraType(cameraState);
-        updateCameraPos();
-    }
-    else if (mouse.second) {
-        zoom += float(y-posMouse.second)/rHeight;
-        if (zoom < 0.01) zoom = 0.01;
-        posMouse.second = y;
-        updateCameraType(cameraState);
+    if (not fps) {
+        if (mouse.first) {
+            rotateX += posMouse.first - x;
+            rotateY += posMouse.second - y;
+            posMouse.first = x;
+            posMouse.second = y;
+            updateCameraPos();
+        }
+        else if (mouse.second) {
+            zoom += float(y-posMouse.second)/rHeight;
+            if (zoom < 0.01) zoom = 0.01;
+            posMouse.second = y;
+            updateCameraType();
+        }
     }
 }
 
@@ -533,10 +528,18 @@ void teclado(unsigned char c, int x, int y) {
         break;
     case 'h':
         help; //Nesisito aiuda amiho servesa bier
-        std::cout << "You can see the state of the program on the up left corner." << std::endl;
-        std::cout << "You cant jump from one state to another without passing for \"PAUSADO\"." << std::endl;
-        std::cout << "Press F to change the background color" << std::endl;
-        std::cout << "Press T and click three time to declare a new moving" << std::endl;
+        std::cout << "You can see the state of the camera type on the up left corner." << std::endl;
+        std::cout << "Press H to display the help(lolol)" << std::endl;
+        std::cout << "Press R to reset the camera" << std::endl;
+        std::cout << "Press P to switch between perspective and ortho camera" << std::endl;
+        std::cout << "Press C to switch between first person camera and third person camera" << std::endl;
+        std::cout << "Press WASD to move the Patricio" << std::endl;
+        std::cout << "Press Z or X to increment/decrement the speed of the Patricio" << std::endl;
+        std::cout << "Press V to make the walls visible/invisible" << std::endl;
+        std::cout << "Press B to make the sfere of the scene visible/invisible" << std::endl;
+        std::cout << "Press M to switch the model of the main character" << std::endl;
+        std::cout << "Press O to change the polygon mode" << std::endl;
+        std::cout << "Press Space to unleash the hidden and destructive power of the Killer Patricio" << std::endl;
         std::cout << std::endl;
         break;
     case 'w':
@@ -558,6 +561,7 @@ void teclado(unsigned char c, int x, int y) {
         direccionPatricio -= 2.5;
         if (fps) updateCamera();
         else glutPostRedisplay();
+        break;
     case 'z':
         speed += 0.03;
         break;
@@ -570,15 +574,13 @@ void teclado(unsigned char c, int x, int y) {
         break;
     case 'c':
         fps = not fps;
+        if (fps) changeCamera(Fps);
+        else changeCamera(ortho ? Ortho : Perspective);
         updateCamera();
         break;
-    case 'f':
-        if (state == rotating) changeState(moving);
-        else if (state == moving) changeState(rotating);
-        break;
     case 'p':
-        cameraState = (cameraState+1)%qttCameraType;
-        updateCameraType(cameraState);
+        if (cameraState != Fps) changeCamera((cameraState+1)%(qttCameraType-1));
+        updateCameraType();
         break;
     case 'o':
         changeShowing((showing+1)%qttShowing);
@@ -597,6 +599,7 @@ void teclado(unsigned char c, int x, int y) {
         break;
     case ' ':
         balas.push_back(Bala(patricio1.posFinal,direccionPatricio));
+        break;
     default:
         break;
     }
@@ -609,7 +612,6 @@ float ttt,timebase=0;
 void update() {
     ttt = glutGet(GLUT_ELAPSED_TIME);
     float deltaTime;
-    std::cout << "FPS:" << 1000/(ttt-timebase) <<  std::endl;
     deltaTime = (ttt-timebase)/1000;
 //    sprintf(textShow,"%4.2f",1/deltaTime);
     timebase = ttt;
@@ -626,7 +628,7 @@ int main(int argc, char **argv) {
     glutInit(&argc,argv);
     glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGBA|GLUT_DEPTH);
     glutInitWindowSize(rHeight,rWidth);
-    glutCreateWindow("Bloc 1");
+    glutCreateWindow("Bloc 3");
     init();
     glEnable(GL_DEPTH_TEST);
     glutDisplayFunc(refresh);
