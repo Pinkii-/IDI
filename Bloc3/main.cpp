@@ -135,16 +135,13 @@ struct Muneco {
     float scalated;
     Muneco () {}
     Muneco (Models name,float s,Vector3f pos) {
-        std::cout << "Creando nuevo modelo" << std::endl << "Su escalado es " << s << std::endl;
         scalated = s;
         changeModel(name);
         posFinal = Vector3f(pos.x,pos.y+tamano.y/2,pos.z);
     }
     void changeModel(Models name) {
-        std::cout << "Cambiando el modelo";
         this->name = name;
         modelo = loadModel(name);
-        std::cout << "    Modelo cargado" << std::endl;
         box.createBox(*modelo);
         centro = box.findCenter();
         size();
@@ -169,8 +166,8 @@ std::pair<bool,bool> mouse;
 float r, g, b, a;
 Showing showing;
 CameraType cameraState;
-char* textCamera;
-char* textShow;
+const char* textCamera;
+const char* textShow;
 int rotateX,rotateY,rotateZ;
 float dist; float zoom;
 float monigote;
@@ -411,11 +408,11 @@ void writeOnWindow() {
         //Pinto
         glColor3f(0,0,0);
         glRasterPos2f(-0.9,0.9);
-        glutBitmapString(GLUT_BITMAP_HELVETICA_18, textCamera);
+        glutBitmapString(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)(textCamera));
 
         glColor3f(0,0,0);
         glRasterPos2f(0.7,0.9);
-        glutBitmapString(GLUT_BITMAP_HELVETICA_18, textShow);
+        glutBitmapString(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)(textShow));
 
         glMatrixMode(GL_PROJECTION);
         glPopMatrix(); // Deshago fornicacion de la projection
@@ -579,14 +576,14 @@ void teclado(unsigned char c, int x, int y) {
         updateCamera();
         break;
     case 'p':
-        if (cameraState != Fps) changeCamera((cameraState+1)%(qttCameraType-1));
+        if (cameraState != Fps) changeCamera(CameraType((cameraState+1)%(qttCameraType-1)));
         updateCameraType();
         break;
     case 'o':
-        changeShowing((showing+1)%qttShowing);
+        changeShowing(Showing((showing+1)%qttShowing));
         break;
     case 'm':
-        patricio1.changeModel((patricio1.name+1)%qttModels);
+        patricio1.changeModel(Models((patricio1.name+1)%qttModels));
         glutPostRedisplay();
         break;
     case 'v':

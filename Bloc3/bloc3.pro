@@ -3,8 +3,6 @@ CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
 
-QMAKE_CXXFLAGS += -fpermissive -Wwrite-strings
-
 LIBS += -lglut -lGL -lGLU -pthread
 
 SOURCES += main.cpp \
