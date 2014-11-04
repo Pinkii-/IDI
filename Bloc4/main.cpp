@@ -46,14 +46,16 @@ Model *loadModel(Models m) {
 }
 
 struct Color {
+    GLfloat col[4];
     float r,g,b,a;
     Color(float r, float g, float b, float a) {
-        this->r = r;
-        this->g = g;
-        this->b = b;
-        this->a = a;
+        col[0] = r;
+        col[1] = g;
+        col[2] = b;
+        col[3] = a;
     }
 };
+
 
 struct Vector3f {
     float x, y, z;
@@ -115,7 +117,7 @@ struct Esfera {
     float radio;
 };
 
-void setMaterial(Color c);
+void setMaterial(GLfloat* ambient,GLfloat* diffuse,GLfloat* specular,float shininess);
 
 struct Bala {
     Vector3f pos;
@@ -132,7 +134,9 @@ struct Bala {
         pos = pos + Vector3f(sin(this->dir*M_PI/180),0,cos(this->dir*M_PI/180))*s*deltaTime;
     }
     void draw() {
-        setMaterial(Color(0,0,0,0));
+        GLfloat c[4] = {0.8,0.8,0.8,0};
+        GLfloat WHITE[4] = {1,1,1,1};
+        setMaterial(c,c,WHITE,80);
         glutSolidCone(0.08,0.5,10,10);
     }
 };
@@ -187,7 +191,15 @@ float speed,direccionPatricio;
 Esfera s;
 bool sferaVisible,wallVisible,fps,ortho;
 std::vector<Bala> balas;
-bool lights,light1;
+bool lights,light1,normals;
+
+GLfloat WHITE[] = {1,1,1,1};
+GLfloat AWHITE[] = {0.8,0.8,0.8,0};
+GLfloat BLACK[] = {0,0,0,0};
+GLfloat GREEN[] = {0,1,0,0};
+GLfloat ORANGE[] = {1,0.5,0.0,0};
+GLfloat BLUE[] = {0.f,0.f,1.f,0};
+
 
 
 
@@ -308,8 +320,9 @@ void changeCamera(CameraType s) {
 
 void reset() {
     glEnable(GL_LIGHTING);
-    lights = true;
     glEnable(GL_LIGHT0);
+    lights = true;
+    normals = true;
     dist = s.radio*4;
     rotateX = rotateY = 45;
     rotateZ = 0;
@@ -318,6 +331,7 @@ void reset() {
 }
 
 void init() {
+    glShadeModel(GL_SMOOTH);
     modelos = std::vector<Model>(qttModels);
     loadedModels = std::vector<bool>(qttModels,false);
     balas = std::vector<Bala>(0);
@@ -340,19 +354,42 @@ void init() {
 
 }
 
+void setMaterial(GLfloat* ambient,GLfloat* diffuse,GLfloat* specular,float shininess) {
+    glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,ambient);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,diffuse);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,specular);
+    glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,shininess);
+}
+
+void setMaterialWithOutShine(GLfloat* color) {
+    setMaterial(color,color,BLACK,128);
+}
+
+void setMaterialWithShine(GLfloat* color, float shine) {
+    GLfloat aclarado[4];
+    aclarado[0] = (color[0]+0.2)*1.2;
+    aclarado[1] = (color[1]+0.2)*1.2;
+    aclarado[2] = (color[2]+0.2)*1.2;
+    aclarado[3] = (color[3]+0.2)*1.2;
+    setMaterial(color,color,aclarado,shine);
+}
+
 void myBodyIsReady(float size) {
     glPushMatrix(); {// Body
         if (not lights) glColor3f(0,0.7,0);
+        else setMaterialWithShine(WHITE,90);
         //    glTranslated(0.f,0.10f,0.f);
         glutSolidSphere(size,20.f,20.f);
     } glPopMatrix();
     glPushMatrix(); {// Head
         if (not lights) glColor3f(0,0,0.7);
+        else setMaterialWithShine(WHITE,50);
         glTranslated(0.f,size*1.5,0.f);
         glutSolidSphere(size/2,20.f,20.f);
     } glPopMatrix();
     glPushMatrix(); { // The D
         if (not lights) glColor3f(0.7,0,0);
+        else setMaterialWithShine(ORANGE,50);
         glTranslated(size/4,size*1.5,0.f);
         glRotated(90,0,1,0);
         glutSolidCone(size/4,size/2,20.f,20.f);
@@ -365,17 +402,6 @@ void ejes() {
     glBegin(GL_LINES);if (not lights) glColor3f(0.0f, 0.0f, 1.0f);glVertex3f(0,0,0);glVertex3f(0,0,1);glEnd();
 }
 
-void setMaterial(Color c) {
-    GLfloat col[4];
-    col[0] = c.r;
-    col[1] = c.g;
-    col[2] = c.b;
-    col[3] = c.a;
-    glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,col);
-    glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,col);
-    glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,col);
-    glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,c.a);
-}
 
 void daModelIsReal(Muneco m) {
     float smax = std::max(m.box.maxX-m.box.minX,std::max(m.box.maxY-m.box.minY,m.box.maxZ-m.box.minZ));
@@ -389,20 +415,17 @@ void daModelIsReal(Muneco m) {
         
         const Face &f = m.modelo->faces()[i];
         if (material != f.mat and lights) {
-            glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,Materials[f.mat].ambient);
-            glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,Materials[f.mat].diffuse);
-            glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,Materials[f.mat].specular);
-            glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,Materials[f.mat].shininess);
+            setMaterial(Materials[f.mat].ambient,Materials[f.mat].diffuse,Materials[f.mat].specular,Materials[f.mat].shininess);
             material = f.mat;
         }
         else if (not lights) glColor4fv(Materials[f.mat].diffuse);
 
         const Vertex *v;
 
-        if (m.modelo->normals().size() == 0) glNormal3dv(f.normalC);
+        if (m.modelo->normals().size() == 0 or not normals) glNormal3dv(f.normalC);
         for (int j = 0; j < 3; ++j) {
             v = &m.modelo->vertices()[f.v[j]];
-            if (not m.modelo->normals().size() < 1) {
+            if (not m.modelo->normals().size() < 1 and normals) {
                 const Normal *n = &m.modelo->normals()[f.n[j]];
                 glNormal3dv(n);
             }
@@ -490,20 +513,21 @@ void refresh(void) {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     if (sferaVisible) {
     glPushMatrix();
-        if (not lights) glColor3f(0,0,0);
-        else setMaterial(Color(1,0,0,1));
+        if (not lights) glColor3f(1,0,0);
+        else {GLfloat color[4] = {1,0,0,0};setMaterialWithOutShine(color);}
         glTranslated(s.centro.x,s.centro.y,s.centro.z);
         glutWireSphere(s.radio,30,30);
     glPopMatrix(); }
     glPushMatrix();
-        if (not lights) glColor3f(0.1,0.9,0.9);
-        else setMaterial(Color(0,0.8,0,1));
+        if (not lights) glColor3f(0.1,0.1,0.9);
+        else setMaterialWithShine(BLUE,50);
+        glNormal3d(0,1,0);
         drawGround(Vector3f(0,0,0), Vector3f(1,0,1), 10);
     glPopMatrix();
     ejes();
     if (wallVisible) {
-        if (not lights) glColor3f(0.1,0.9,0.9);
-        else setMaterial(Color(0.1,0.9,0.9,1));
+        if (not lights) glColor3f(0.5,0.5,0.5);
+        else {GLfloat color[4] = {0.1,0.8,0.1,0};setMaterialWithOutShine(color);}
         drawWall(Vector3f(0,0,-4.9),Vector3f(10,1.5,0.2));
         drawWall(Vector3f(1.5,0,2.5),Vector3f(0.2,1.5,4));
     }
@@ -649,6 +673,10 @@ void teclado(unsigned char c, int x, int y) {
         lights = not lights;
         if (lights) glEnable(GL_LIGHTING);
         else glDisable(GL_LIGHTING);
+        break;
+    case 'n':
+        normals = not normals;
+        glutPostRedisplay();
         break;
     default:
         break;
