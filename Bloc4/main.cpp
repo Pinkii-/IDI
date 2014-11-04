@@ -45,6 +45,16 @@ Model *loadModel(Models m) {
     return &modelos[m];
 }
 
+struct Color {
+    float r,g,b,a;
+    Color(float r, float g, float b, float a) {
+        this->r = r;
+        this->g = g;
+        this->b = b;
+        this->a = a;
+    }
+};
+
 struct Vector3f {
     float x, y, z;
     Vector3f() {}
@@ -105,6 +115,8 @@ struct Esfera {
     float radio;
 };
 
+void setMaterial(Color c);
+
 struct Bala {
     Vector3f pos;
     float dir;
@@ -118,9 +130,9 @@ struct Bala {
     }
     void update(float deltaTime) {
         pos = pos + Vector3f(sin(this->dir*M_PI/180),0,cos(this->dir*M_PI/180))*s*deltaTime;
-//        pos = pos + Vector3f(1,0,0)*this->speed*deltaTime;
     }
     void draw() {
+        setMaterial(Color(0,0,0,0));
         glutSolidCone(0.08,0.5,10,10);
     }
 };
@@ -153,7 +165,6 @@ struct Muneco {
         yyy = scalated*(box.maxY-box.minY)/smax;
         zzz = scalated*(box.maxZ-box.minZ)/smax;
         tamano = Vector3f(xxx,yyy,zzz);
-        std::cout << "Su tamaño es " << tamano.x << " " << tamano.y << " " << tamano.z << std::endl;
     }
 };
 
@@ -176,6 +187,7 @@ float speed,direccionPatricio;
 Esfera s;
 bool sferaVisible,wallVisible,fps,ortho;
 std::vector<Bala> balas;
+bool lights,light1;
 
 
 
@@ -244,7 +256,6 @@ void updateCameraType() {
         }
     }
     glMatrixMode(GL_MODELVIEW);
-//    glutPostRedisplay();
 }
 
 void updateCameraPos() {
@@ -296,6 +307,9 @@ void changeCamera(CameraType s) {
 }
 
 void reset() {
+    glEnable(GL_LIGHTING);
+    lights = true;
+    glEnable(GL_LIGHT0);
     dist = s.radio*4;
     rotateX = rotateY = 45;
     rotateZ = 0;
@@ -328,17 +342,17 @@ void init() {
 
 void myBodyIsReady(float size) {
     glPushMatrix(); {// Body
-        glColor3f(0,0.7,0);
+        if (not lights) glColor3f(0,0.7,0);
         //    glTranslated(0.f,0.10f,0.f);
         glutSolidSphere(size,20.f,20.f);
     } glPopMatrix();
     glPushMatrix(); {// Head
-        glColor3f(0,0,0.7);
+        if (not lights) glColor3f(0,0,0.7);
         glTranslated(0.f,size*1.5,0.f);
         glutSolidSphere(size/2,20.f,20.f);
     } glPopMatrix();
     glPushMatrix(); { // The D
-        glColor3f(0.7,0,0);
+        if (not lights) glColor3f(0.7,0,0);
         glTranslated(size/4,size*1.5,0.f);
         glRotated(90,0,1,0);
         glutSolidCone(size/4,size/2,20.f,20.f);
@@ -346,9 +360,21 @@ void myBodyIsReady(float size) {
 }
 
 void ejes() {
-    glBegin(GL_LINES);glColor3f(1.0f, 0.0f, 0.0f);glVertex3f(0,0,0);glVertex3f(1,0,0);glEnd();
-    glBegin(GL_LINES);glColor3f(0.0f, 1.0f, 0.0f);glVertex3f(0,0,0);glVertex3f(0,1,0);glEnd();
-    glBegin(GL_LINES);glColor3f(0.0f, 0.0f, 1.0f);glVertex3f(0,0,0);glVertex3f(0,0,1);glEnd();
+    glBegin(GL_LINES);if (not lights) glColor3f(1.0f, 0.0f, 0.0f);glVertex3f(0,0,0);glVertex3f(1,0,0);glEnd();
+    glBegin(GL_LINES);if (not lights) glColor3f(0.0f, 1.0f, 0.0f);glVertex3f(0,0,0);glVertex3f(0,1,0);glEnd();
+    glBegin(GL_LINES);if (not lights) glColor3f(0.0f, 0.0f, 1.0f);glVertex3f(0,0,0);glVertex3f(0,0,1);glEnd();
+}
+
+void setMaterial(Color c) {
+    GLfloat col[4];
+    col[0] = c.r;
+    col[1] = c.g;
+    col[2] = c.b;
+    col[3] = c.a;
+    glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,col);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,col);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,col);
+    glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,c.a);
 }
 
 void daModelIsReal(Muneco m) {
@@ -360,14 +386,26 @@ void daModelIsReal(Muneco m) {
     glBegin(GL_TRIANGLES);
 
     for (int i = 0; i < m.modelo->faces().size(); ++i) {
+        
         const Face &f = m.modelo->faces()[i];
-        if (material != f.mat) {
-          //Declarar los cuatro materiales
+        if (material != f.mat and lights) {
+            glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,Materials[f.mat].ambient);
+            glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,Materials[f.mat].diffuse);
+            glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,Materials[f.mat].specular);
+            glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,Materials[f.mat].shininess);
+            material = f.mat;
         }
-        glColor4fv(Materials[f.mat].diffuse);
+        else if (not lights) glColor4fv(Materials[f.mat].diffuse);
+
         const Vertex *v;
+
+        if (m.modelo->normals().size() == 0) glNormal3dv(f.normalC);
         for (int j = 0; j < 3; ++j) {
             v = &m.modelo->vertices()[f.v[j]];
+            if (not m.modelo->normals().size() < 1) {
+                const Normal *n = &m.modelo->normals()[f.n[j]];
+                glNormal3dv(n);
+            }
             glVertex3dv(v);
         }
     }
@@ -410,11 +448,11 @@ void writeOnWindow() {
         glMatrixMode(GL_MODELVIEW);
 
         //Pinto
-        glColor3f(0,0,0);
+        if (not lights) glColor3f(0,0,0);
         glRasterPos2f(-0.9,0.9);
         glutBitmapString(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)(textCamera));
 
-        glColor3f(0,0,0);
+        if (not lights) glColor3f(0,0,0);
         glRasterPos2f(0.7,0.9);
         glutBitmapString(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)(textShow));
 
@@ -452,17 +490,23 @@ void refresh(void) {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     if (sferaVisible) {
     glPushMatrix();
-        glColor3f(0,0,0);
+        if (not lights) glColor3f(0,0,0);
+        else setMaterial(Color(1,0,0,1));
         glTranslated(s.centro.x,s.centro.y,s.centro.z);
         glutWireSphere(s.radio,30,30);
     glPopMatrix(); }
     glPushMatrix();
-        glColor3f(0.1,0.9,0.9);
+        if (not lights) glColor3f(0.1,0.9,0.9);
+        else setMaterial(Color(0,0.8,0,1));
         drawGround(Vector3f(0,0,0), Vector3f(1,0,1), 10);
     glPopMatrix();
     ejes();
-    if (wallVisible) {drawWall(Vector3f(0,0,-4.9),Vector3f(10,1.5,0.2));
-                      drawWall(Vector3f(1.5,0,2.5),Vector3f(0.2,1.5,4));}
+    if (wallVisible) {
+        if (not lights) glColor3f(0.1,0.9,0.9);
+        else setMaterial(Color(0.1,0.9,0.9,1));
+        drawWall(Vector3f(0,0,-4.9),Vector3f(10,1.5,0.2));
+        drawWall(Vector3f(1.5,0,2.5),Vector3f(0.2,1.5,4));
+    }
     drawMonigotes();
     glPushMatrix(); //patricio serialKiller
         glTranslated(patricio1.posFinal.x,patricio1.posFinal.y,patricio1.posFinal.z);
@@ -600,6 +644,11 @@ void teclado(unsigned char c, int x, int y) {
         break;
     case ' ':
         balas.push_back(Bala(patricio1.posFinal,direccionPatricio));
+        break;
+    case 'i':
+        lights = not lights;
+        if (lights) glEnable(GL_LIGHTING);
+        else glDisable(GL_LIGHTING);
         break;
     default:
         break;
