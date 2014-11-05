@@ -191,7 +191,7 @@ float speed,direccionPatricio;
 Esfera s;
 bool sferaVisible,wallVisible,fps,ortho;
 std::vector<Bala> balas;
-bool lights,light1,normals;
+bool lights,light0,light1,normals;
 
 GLfloat WHITE[] = {1,1,1,1};
 GLfloat AWHITE[] = {0.8,0.8,0.8,0};
@@ -306,7 +306,7 @@ void changeCamera(CameraType s) {
        textCamera = "Camara Ortho";
         break;
     case Perspective:
-        textCamera = "Camara Perstevtiva";
+        textCamera = "Camara Perstectiva";
         break;
     case Fps:
         textCamera = "First person shooter";
@@ -320,9 +320,14 @@ void changeCamera(CameraType s) {
 
 void reset() {
     glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
     lights = true;
     normals = true;
+
+    light0 = false;
+    glDisable(GL_LIGHT0);
+    light1 = true;
+    glEnable(GL_LIGHT1);
+
     dist = s.radio*4;
     rotateX = rotateY = 45;
     rotateZ = 0;
@@ -339,7 +344,6 @@ void init() {
     patricio2 = Muneco(patricio,1.5,Vector3f(2.5,0,2.5));
     speed = 0.1;
     direccionPatricio = -90;
-//    textCamera = "fps";
     showing = sFill;
     textShow = "Fill";
     r = g = 1;
@@ -351,7 +355,6 @@ void init() {
     changeCamera(Fps);
     updateCamera();
     glEnable(GL_NORMALIZE);
-
 }
 
 void setMaterial(GLfloat* ambient,GLfloat* diffuse,GLfloat* specular,float shininess) {
@@ -367,10 +370,10 @@ void setMaterialWithOutShine(GLfloat* color) {
 
 void setMaterialWithShine(GLfloat* color, float shine) {
     GLfloat aclarado[4];
-    aclarado[0] = (color[0]+0.2)*1.2;
-    aclarado[1] = (color[1]+0.2)*1.2;
-    aclarado[2] = (color[2]+0.2)*1.2;
-    aclarado[3] = (color[3]+0.2)*1.2;
+    aclarado[0] = (color[0]+0.2)*1.5;
+    aclarado[1] = (color[1]+0.2)*1.5;
+    aclarado[2] = (color[2]+0.2)*1.5;
+    aclarado[3] = (color[3]+0.2)*1.5;
     setMaterial(color,color,aclarado,shine);
 }
 
@@ -508,9 +511,24 @@ void drawWall(Vector3f centro,Vector3f size) {
     glPopMatrix();
 }
 
+void drawLights() {
+    if (light1) {
+        glPushMatrix();
+        glLoadIdentity();
+        GLfloat pos[4] = {0,3,0,1};
+        glLightfv(GL_LIGHT1,GL_POSITION,pos);
+        glLightfv(GL_LIGHT1,GL_DIFFUSE,WHITE);
+        glLightfv(GL_LIGHT1,GL_SPECULAR,WHITE);
+
+        glPopMatrix();
+    }
+}
+
+
 void refresh(void) {
     glClearColor(r,g,b,a);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    drawLights();
     if (sferaVisible) {
     glPushMatrix();
         if (not lights) glColor3f(1,0,0);
@@ -677,6 +695,16 @@ void teclado(unsigned char c, int x, int y) {
     case 'n':
         normals = not normals;
         glutPostRedisplay();
+        break;
+    case '0':
+        light0 = not light0;
+        if (light0) glEnable(GL_LIGHT0);
+        else glDisable(GL_LIGHT0);
+        break;
+    case '1':
+        light1 = not light1;
+        if (light1) glEnable(GL_LIGHT1);
+        else glDisable(GL_LIGHT1);
         break;
     default:
         break;
