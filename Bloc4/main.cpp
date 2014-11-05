@@ -191,7 +191,7 @@ float speed,direccionPatricio;
 Esfera s;
 bool sferaVisible,wallVisible,fps,ortho;
 std::vector<Bala> balas;
-bool lights,light0,light1,normals;
+bool lights,light0,light1,light2,normals;
 
 GLfloat WHITE[] = {1,1,1,1};
 GLfloat AWHITE[] = {0.8,0.8,0.8,0};
@@ -199,6 +199,9 @@ GLfloat BLACK[] = {0,0,0,0};
 GLfloat GREEN[] = {0,1,0,0};
 GLfloat ORANGE[] = {1,0.5,0.0,0};
 GLfloat BLUE[] = {0.f,0.f,1.f,0};
+
+int posLight0 = 0;
+GLfloat posLight[5][2] = {{-5,-5},{-5,5},{5,5},{5,-5},{2.5,2.5}};
 
 
 
@@ -327,6 +330,8 @@ void reset() {
     glDisable(GL_LIGHT0);
     light1 = true;
     glEnable(GL_LIGHT1);
+    light2 = false;
+    glDisable(GL_LIGHT2);
 
     dist = s.radio*4;
     rotateX = rotateY = 45;
@@ -512,6 +517,14 @@ void drawWall(Vector3f centro,Vector3f size) {
 }
 
 void drawLights() {
+    if (light0) {
+        glPushMatrix();
+        GLfloat pos[4] = {posLight[posLight0][0],(posLight0==4?2.5:1.5),posLight[posLight0][1],1};
+        glLightfv(GL_LIGHT0,GL_POSITION,pos);
+        glLightfv(GL_LIGHT0,GL_DIFFUSE,ORANGE);
+        glLightfv(GL_LIGHT0,GL_SPECULAR,ORANGE);
+        glPopMatrix();
+    }
     if (light1) {
         glPushMatrix();
         glLoadIdentity();
@@ -519,7 +532,16 @@ void drawLights() {
         glLightfv(GL_LIGHT1,GL_POSITION,pos);
         glLightfv(GL_LIGHT1,GL_DIFFUSE,WHITE);
         glLightfv(GL_LIGHT1,GL_SPECULAR,WHITE);
-
+        glPopMatrix();
+    }
+    if (light2) {
+        glPushMatrix();
+        Vector3f director(sin(direccionPatricio*M_PI/180),0,cos(direccionPatricio*M_PI/180));
+        Vector3f p(patricio1.posFinal.x,patricio1.posFinal.y+patricio1.tamano.y/4,patricio1.posFinal.z);
+        GLfloat pos[4] = {p.x+patricio1.tamano.x/3*director.x,p.y,p.z+patricio1.tamano.z/3*director.z,1};
+        glLightfv(GL_LIGHT2,GL_POSITION,pos);
+        glLightfv(GL_LIGHT2,GL_DIFFUSE,WHITE);
+        glLightfv(GL_LIGHT2,GL_SPECULAR,WHITE);
         glPopMatrix();
     }
 }
@@ -672,7 +694,7 @@ void teclado(unsigned char c, int x, int y) {
     case 'o':
         changeShowing(Showing((showing+1)%qttShowing));
         break;
-    case 'm':
+    case ',':
         patricio1.changeModel(Models((patricio1.name+1)%qttModels));
         glutPostRedisplay();
         break;
@@ -696,6 +718,9 @@ void teclado(unsigned char c, int x, int y) {
         normals = not normals;
         glutPostRedisplay();
         break;
+    case 'm':
+        posLight0 = (++posLight0)%5;
+        break;
     case '0':
         light0 = not light0;
         if (light0) glEnable(GL_LIGHT0);
@@ -705,6 +730,11 @@ void teclado(unsigned char c, int x, int y) {
         light1 = not light1;
         if (light1) glEnable(GL_LIGHT1);
         else glDisable(GL_LIGHT1);
+        break;
+    case '2':
+        light2 = not light2;
+        if (light2) glEnable(GL_LIGHT2);
+        else glDisable(GL_LIGHT2);
         break;
     default:
         break;
