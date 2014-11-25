@@ -195,6 +195,7 @@ bool lights,light0,light1,light2,normals;
 
 GLfloat WHITE[] = {1,1,1,1};
 GLfloat AWHITE[] = {0.8,0.8,0.8,0};
+GLfloat SWHITE[] = {0.2,0.2,0.2,0};
 GLfloat BLACK[] = {0,0,0,0};
 GLfloat GREEN[] = {0,1,0,0};
 GLfloat ORANGE[] = {1,0.5,0.0,0};
@@ -531,7 +532,7 @@ void drawLights() {
         GLfloat pos[4] = {0,3,0,1};
         glLightfv(GL_LIGHT1,GL_POSITION,pos);
         glLightfv(GL_LIGHT1,GL_DIFFUSE,WHITE);
-        glLightfv(GL_LIGHT1,GL_SPECULAR,WHITE);
+        glLightfv(GL_LIGHT1,GL_SPECULAR,SWHITE);
         glPopMatrix();
     }
     if (light2) {
@@ -541,7 +542,7 @@ void drawLights() {
         GLfloat pos[4] = {p.x+patricio1.tamano.x/3*director.x,p.y,p.z+patricio1.tamano.z/3*director.z,1};
         glLightfv(GL_LIGHT2,GL_POSITION,pos);
         glLightfv(GL_LIGHT2,GL_DIFFUSE,WHITE);
-        glLightfv(GL_LIGHT2,GL_SPECULAR,WHITE);
+        glLightfv(GL_LIGHT2,GL_SPECULAR,SWHITE);
         glPopMatrix();
     }
 }
