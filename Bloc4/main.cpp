@@ -196,10 +196,14 @@ bool lights,light0,light1,light2,normals;
 GLfloat WHITE[] = {1,1,1,1};
 GLfloat AWHITE[] = {0.8,0.8,0.8,0};
 GLfloat SWHITE[] = {0.2,0.2,0.2,0};
+<<<<<<< HEAD
 GLfloat BLACK[] = {0,0,0,0};
+=======
+GLfloat BLACK[] = {0,0,0,1};
+>>>>>>> 53cd9df11663f6541395e1314f1055dcfd1471a5
 GLfloat GREEN[] = {0,1,0,0};
 GLfloat ORANGE[] = {1,0.5,0.0,0};
-GLfloat BLUE[] = {0.f,0.f,1.f,0};
+GLfloat BLUE[] = {0,0,0.8,1};
 
 int posLight0 = 0;
 GLfloat posLight[5][2] = {{-5,-5},{-5,5},{5,5},{5,-5},{2.5,2.5}};
@@ -343,6 +347,7 @@ void reset() {
 
 void init() {
     glShadeModel(GL_SMOOTH);
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT,BLACK);
     modelos = std::vector<Model>(qttModels);
     loadedModels = std::vector<bool>(qttModels,false);
     balas = std::vector<Bala>(0);
@@ -376,10 +381,10 @@ void setMaterialWithOutShine(GLfloat* color) {
 
 void setMaterialWithShine(GLfloat* color, float shine) {
     GLfloat aclarado[4];
-    aclarado[0] = (color[0]+0.2)*1.5;
-    aclarado[1] = (color[1]+0.2)*1.5;
-    aclarado[2] = (color[2]+0.2)*1.5;
-    aclarado[3] = (color[3]+0.2)*1.5;
+    aclarado[0] = (color[0]+0.2)*0.2;
+    aclarado[1] = (color[1]+0.2)*0.2;
+    aclarado[2] = (color[2]+0.2)*0.2;
+    aclarado[3] = (color[3]+0.2)*0.2;
     setMaterial(color,color,aclarado,shine);
 }
 
@@ -470,6 +475,19 @@ void drawGround(Vector3f centro, Vector3f plano, float size) {
     glEnd();
 }
 
+void drawGround(Vector3f centro, Vector3f plano, float size, int n) {
+    int nSide = round(sqrt(n));
+    float sAux = size/nSide;
+
+    for (int i = 0; i < nSide; ++i) {
+        for (int j = 0; j < nSide; ++j) {
+            glPushMatrix();
+            drawGround(Vector3f(-(size/2)+i*sAux+sAux*0.5,0,-(size/2)+j*sAux+0.5*sAux),plano,sAux);
+            glPopMatrix();
+        }
+    }
+}
+
 void writeOnWindow() {
     glPushMatrix();
         glLoadIdentity(); // Me fornico la modelview
@@ -549,7 +567,7 @@ void drawLights() {
 
 
 void refresh(void) {
-    glClearColor(r,g,b,a);
+    glClearColor(0,0,0,0);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     drawLights();
     if (sferaVisible) {
@@ -561,9 +579,9 @@ void refresh(void) {
     glPopMatrix(); }
     glPushMatrix();
         if (not lights) glColor3f(0.1,0.1,0.9);
-        else setMaterialWithShine(BLUE,50);
+        else setMaterialWithShine(BLUE,100);
         glNormal3d(0,1,0);
-        drawGround(Vector3f(0,0,0), Vector3f(1,0,1), 10);
+        drawGround(Vector3f(0,0,0), Vector3f(1,0,1), 10,100);
     glPopMatrix();
     ejes();
     if (wallVisible) {
