@@ -10,6 +10,9 @@ public:
     MyForm(QWidget *parent = 0);
 private:
     Ui::MyForm ui;
+    bool visible;
+public slots:
+    void setVisible();
 };
 
 #endif // MYFORM_H
