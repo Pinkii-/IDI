@@ -8,5 +8,10 @@ MyForm::MyForm(QWidget* parent): QWidget(parent)
 
 void MyForm::setVisible() {
     visible = !visible;
-    ui.
+    ui.label->setVisible(visible);
+    ui.label_2->setVisible(visible);
+    ui.label_3->setVisible(visible);
+    ui.lineEdit->setVisible(visible);
+    ui.spinBox->setVisible(visible);
+    ui.horizontalSlider->setVisible(visible);
 }
