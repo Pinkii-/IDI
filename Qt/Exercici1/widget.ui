@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MyForm</class>
+ <widget class="QWidget" name="MyForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>447</width>
+    <height>382</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_5">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout_4">
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QPushButton" name="pushButton">
+             <property name="text">
+              <string>Camió</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="MyQLabel" name="label_2">
+             <property name="text">
+              <string>0</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <item>
+            <widget class="QPushButton" name="pushButton_2">
+             <property name="text">
+              <string>Cotxe</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="MyQLabel" name="label_3">
+             <property name="text">
+              <string>0</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QPushButton" name="pushButton_3">
+             <property name="text">
+              <string>Moto</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="MyQLabel" name="label_4">
+             <property name="text">
+              <string>0</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="MyQLabel" name="label">
+           <property name="autoFillBackground">
+            <bool>false</bool>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">background-color:green</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QRadioButton" name="radioButton">
+             <property name="text">
+              <string>Obrir</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radioButton_2">
+             <property name="text">
+              <string>Tancar</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>Recaptació (€):</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="MyQLabel" name="label_6">
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>187</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_6">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_4">
+       <property name="text">
+        <string>sortir</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MyQLabel</class>
+   <extends>QLabel</extends>
+   <header>myqlabel.h</header>
+   <slots>
+    <slot>addOne()</slot>
+    <slot>addFour()</slot>
+    <slot>setOpen()</slot>
+    <slot>setClose()</slot>
+    <slot>setGreenBackground()</slot>
+    <slot>setRedBackground()</slot>
+   </slots>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>label_2</receiver>
+   <slot>addOne()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>84</x>
+     <y>22</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>119</x>
+     <y>27</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>label_3</receiver>
+   <slot>addOne()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>61</x>
+     <y>57</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>119</x>
+     <y>64</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_3</sender>
+   <signal>clicked()</signal>
+   <receiver>label_4</receiver>
+   <slot>addOne()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>66</x>
+     <y>99</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>119</x>
+     <y>96</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>label_6</receiver>
+   <slot>addOne()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>32</x>
+     <y>60</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>121</x>
+     <y>129</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_3</sender>
+   <signal>clicked()</signal>
+   <receiver>label_6</receiver>
+   <slot>addOne()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>25</x>
+     <y>93</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>125</x>
+     <y>131</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_4</sender>
+   <signal>clicked()</signal>
+   <receiver>MyForm</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>362</x>
+     <y>345</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>210</x>
+     <y>191</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>label_6</receiver>
+   <slot>addFour()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>97</x>
+     <y>31</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>123</x>
+     <y>127</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>label_2</receiver>
+   <slot>setOpen()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>72</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>119</x>
+     <y>35</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>label_3</receiver>
+   <slot>setOpen()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>70</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>119</x>
+     <y>62</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>label_4</receiver>
+   <slot>setOpen()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>71</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>119</x>
+     <y>104</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>label_6</receiver>
+   <slot>setOpen()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>72</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>126</x>
+     <y>130</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>label_2</receiver>
+   <slot>setClose()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>97</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>119</x>
+     <y>34</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>label_3</receiver>
+   <slot>setClose()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>94</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>119</x>
+     <y>60</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>label_4</receiver>
+   <slot>setClose()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>98</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>119</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>label_6</receiver>
+   <slot>setClose()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>103</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>124</x>
+     <y>131</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>label</receiver>
+   <slot>setGreenBackground()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>71</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>43</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>label</receiver>
+   <slot>setRedBackground()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>106</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>34</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
