@@ -13,11 +13,9 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    myform.cpp \
-    mylabel.cpp
+    myform.cpp
 
 HEADERS  += \
-    myform.h \
-    mylabel.h
+    myform.h
 
 FORMS    += widget.ui
